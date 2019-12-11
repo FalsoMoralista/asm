@@ -50,8 +50,9 @@ main:
 	movia r14, clear
 	custom 0, r3, r0, r14
 
-	call draw_block
 	call draw_char
+
+	call loop
 	br end
 	
 init:
@@ -145,11 +146,21 @@ wait_input:
 	ret
 
 draw_block:
-	addi r10, r0, end_screen
+		beq r7, r0, backToEnd
+		br continue
+backToEnd:
+		movia r7, end_screen
+continue:		
+	add r10, r0, r7
+	addi r3, r0, 0b10100000
+	custom 0, r3, r1, r3
 	addi r10, r10, 0x80
 	custom 0, r3, r0, r10 # Put the cursor on the last bottom position of the scrren
-	addi r14, r0, block
+	#addi r14, r0, block
 	custom 0, r3, r1, r14
+	subi r7, r7, 1
+	addi r14, r14, 1
+
 	ret
 
 draw_char:
@@ -158,6 +169,7 @@ draw_char:
 	custom 0, r3, r0, r10 # Put the character on the first bottom position of the scrren
 	addi r14, r0, block
 	custom 0, r3, r1, r14
+
 	ret
 
 
@@ -167,15 +179,24 @@ move_terrain:
 
 
 delay:
+	addi r13, r13, 1
+	bne r15, r13, delay
 
-	ret
+contadorDelay:
+	addi r16, r16, 1
+	addi r13, r0, 0
+	bne r16, r17, delay
 
 # Moves the terrain towards to the character (stay in loop untill user input).
-loop: 
-	ldw r10, 0(r10) # Read from the control push button
-		bne r10, r1, wait_input	# Branches back if not equal to 1
-
-
+loop:
+	# Colocar o endereço de retorno no stak pointer
+	addi r15, r0, 32767
+	addi r13, r0, 0
+	addi r16, r0, 0
+	addi r17, r0, 25
+	call draw_block
+	br delay
+	
 # Read from push button, if equal to 1, exit.
 read_btn:
 	addi r10, r0, control_btn
