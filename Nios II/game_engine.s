@@ -41,6 +41,11 @@
 	.equ control_btn, 0x3010 # colocar o endereço do botão # (Play/Pause/Start) control
 #	.equ jump, 0x0000
 
+
+# Reserved registers:
+# - r5: First block address.
+
+
 .global main
 main: 
 
@@ -194,6 +199,7 @@ draw_char:
 move_terrain:
 #	addi r14, r0, down_row
 #	bne r5, r14, move
+	add r2, r0, r31
 	call move
 #	add r10, r0, r7
 #	addi r3, r0, 0b10100000
@@ -204,27 +210,33 @@ move_terrain:
 #	custom 0, r3, r1, r14
 #	subi r7, r7, 1
 #	addi r14, r14, 1
+	add r31, r0, r2
 	ret
 
 move:
-	addi r10, r0, down_row
-	beq r5, r10  
+	custom 0, r3, r0, r5 # Put the cursor on the first block position
+
 	addi r14, r0, blank
 	custom 0, r3, r1, r14
+
+	addi r10, r0, down_row
+	addi r10, r10, 0x80
+	beq r5, r10, set_last
 
 	subi r5, r5, 1
 	custom 0, r3, r0, r5
 	
 	addi r14, r0, block
 	custom 0, r3, r1, r14
-
-	addi r15, r0, 32767
-	addi r13, r0, 0
-	addi r16, r0, 0
-	addi r17, r0, 25
-
-	call delay
 	ret
+
+# Set cursor to [1][16] position.
+set_last:
+	addi r10, r0, end_screen
+	addi r10, r10, 0x80
+	custom 0, r3, r0, r10 # Move the cursor to [1][16]
+	add r5, r0, r10
+	br loop
 
 delay:
 	addi r13, r13, 1
@@ -233,20 +245,16 @@ contadorDelay:
 	addi r16, r16, 1
 	addi r13, r0, 0
 	bne r16, r17, delay
+	br loop	
 
-	call move	
 # Moves the terrain towards to the character (stay in loop untill user input).
-loop2:
-	# Colocar o endereço de retorno no stack pointer
+loop:
+	call move_terrain
 	addi r15, r0, 32767
 	addi r13, r0, 0
 	addi r16, r0, 0
 	addi r17, r0, 25
-	call draw_block
-	br delay
-
-loop:
-	call move_terrain
+	call delay		
 	br loop
 
 draw_terrain:
@@ -257,12 +265,6 @@ read_btn:
 	ldw r10, 0(r10) # Read from the control push button
 	beq r10, r1, end	# Branches back if equal to 1
 	ret
-
-# Set cursor to [1][16] position.
-set_last:
-	addi r10, r0, end_screen
-	addi r10, r10, 0x80
-	custom 0, r3, r0, r10 # Move the cursor to [1][16]
 
 clear_screen:
 	movia r14, clear
