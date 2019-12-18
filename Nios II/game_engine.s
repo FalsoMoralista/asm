@@ -24,6 +24,9 @@
 	#LCD Characters
 	.equ blank, 0b10100000
 	.equ capital_p, 0b01010000
+	.equ m, 0b01101101
+	.equ v, 0b01100110
+	.equ g, 0b01000111
 	.equ r, 0b01110010
 	.equ s, 0b01110011
 	.equ i, 0b01101001
@@ -40,7 +43,7 @@
 	# Push button addresses:
 	.equ control_btn, 0x3030 # colocar o endereço do botão # (Play/Pause/Start) control
 	.equ jump_btn, 0x3020
-
+	.equ pause_btn, 0x2010
 
 # Reserved registers:
 # - r5: First block address.
@@ -50,6 +53,7 @@
 # - r8: Save r5
 # - r9: Used in order to clear last block from screen
 # - r20: Jump flag
+# - r15: register points of player
 
 .global main
 main: 
@@ -66,6 +70,7 @@ main:
 	call start_message
 	call wait_start
 	call clear_screen
+	call draw_score
 	call draw_char
 	call loop
 
@@ -93,6 +98,7 @@ init:
 		custom 0, r3, r0, r14
 		movia r14, clear
 		custom 0, r3, r0, r14
+
 
 		ret # Retorna para a main	
 
@@ -161,23 +167,23 @@ wait_start:
 
 ############ Draw Functions #################
 draw_score:
-	addi r15, r0, zero
-	custom 0, r3, r1, r15
+	addi r14, r0, last_up
+	addi r14, r14, 0x80
+	custom 0, r3, r0, r14 # Put the cursor on the position [0][16]
+	addi r14, r0, zero
+	custom 0, r3, r1, r14
+	addi r15, r0, 0
 	ret
 
 # Updates the score.
 update_score:
-#	addi r14, r0, nine
-#	beq r15, r14, draw_extra_number 
+
 	addi r14, r0, last_up
 	addi r14, r14, 0x80
 	custom 0, r3, r0, r14 # Put the cursor on the position [0][16]
-	addi r15, r15, 0b1 
+	
+	addi r15, r15, 1
 	custom 0, r3, r1, r15
-	ret
-
-# This will be used to draw an extra digit to the score (when an overflow was caused).  
-draw_extra_number:
 	ret
 
 draw_char:
@@ -256,6 +262,7 @@ contadorDelay:
 
 # Moves the terrain towards to the character (stay in loop untill user input).
 loop:
+	call read_pause
 	call read_jmp
 	call move_terrain
 	call set_delay
@@ -266,6 +273,11 @@ read_jmp:
 	beq r7, r1, return	
 	ldw r4, 0(r11) # Read from the control push button
 	beq r4, r1, jump	# Branches if equal to 1
+	ret
+
+read_pause:
+	ldw r12, 0(r12) # Read from the control push button
+	beq r12, r1, read_pause	# Branches back if equal to 1
 	ret
 
 return:
@@ -314,9 +326,42 @@ check_bottom_block:
 	addi r14, r14, 0x80
 	bne r5, r14, down
 	bne r7, r1, game_over
+	call update_score
 	br loop
 
 game_over:
+	call clear_screen
+	addi r10, r0, 0x04
+	addi r10, r10, 0x80
+	custom 0, r3, r0, r10 # Put the cursor on the 4th upper column
+
+	addi r14, r0, g
+	custom 0, r3, r1, r14 # Writes down r on the LCD
+
+	addi r14, r0, a
+	custom 0, r3, r1, r14 # Writes down e on the LCD
+
+	addi r14, r0, m
+	custom 0, r3, r1, r14 # Writes down s on the LCD
+
+	addi r14, r0, e
+	custom 0, r3, r1, r14 # Writes down s on the LCD
+
+	addi r14, r0, blank
+	custom 0, r3, r1, r14 # Writes down s on the LCD	
+
+	addi r14, r0, o
+	custom 0, r3, r1, r14 # Writes down o on the LCD
+
+	addi r14, r0, v
+	custom 0, r3, r1, r14 # Writes down s on the LCD
+		
+	addi r14, r0, e
+	custom 0, r3, r1, r14 # Writes down e on the LCD
+
+	addi r14, r0, r
+	custom 0, r3, r1, r14 # Writes down e on the LCD
+	
 	br end
 
 # Read from push button, if equal to 1, exit.
@@ -332,4 +377,7 @@ clear_screen:
 	ret
 
 end:
+	addi r10, r0, control_btn
+	ldw r10, 0(r10) # Read from the control push button
+	beq r10, r1, main # Branches back if not equal to 1
 	br end
