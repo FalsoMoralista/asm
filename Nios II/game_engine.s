@@ -19,7 +19,7 @@
 	.equ upper_row, 0b00000010 # Address [0][0] 
 	.equ last_up, 0x0F # Last column first row  [0][16]
 	.equ down_row, 0x40 # Address '40' [1][0]
-	.equ end_screen, 0x4F
+	.equ end_screen, 0x4F # Address [1][16]
 
 	#LCD Characters
 	.equ blank, 0b10100000
@@ -41,23 +41,25 @@
 	.equ zero, 0b00110000
 	.equ nine, 0b00111001
 	# Push button addresses:
-	.equ control_btn, 0x3030 # colocar o endereço do botão # (Play/Pause/Start) control
-	.equ jump_btn, 0x3020
-	.equ pause_btn, 0x2010
+	.equ control_btn, 0x3030 # (Play/Pause/Start) control.
+	.equ jump_btn, 0x3020 # Jump button.
+	.equ pause_btn, 0x2010 # not used yet.
 
 # Reserved registers:
 # - r5: First block address.
 # - r11: Jump button
 # - r12: Start/pause/resume.
-# - r6: Number of blocks.
+# - r6: Quantity of blocks.
 # - r8: Save r5
 # - r9: Used in order to clear last block from screen
 # - r20: Jump flag
-# - r15: register points of player
+# - r15: Registrates the score.
 
 .global main
-main: 
 
+
+# Pre set some registers and calls the loop.
+main: 
 	addi r1, r0, 1
 	addi r11, r0, jump_btn
 	addi r12, r0, control_btn
@@ -76,10 +78,11 @@ main:
 
 	br end
 	
+# Call instructions required to initialize the LCD display. 	
 init:
 		movia r14, init1
-		custom 0, r3, r0, r14 #Limpar Busy Flag
-		custom 0, r3, r0, r14 #
+		custom 0, r3, r0, r14 
+		custom 0, r3, r0, r14 
 		movia r14, init2
 		custom 0, r3, r0, r14
 		movia r14, init3
@@ -104,7 +107,8 @@ init:
 
 # Writes a starting message and waits the user input to start the game.
 start_message:
-	# Write the first word to the upper row.
+
+	# Write the first word (Pressione) to the upper row.
 	addi r10, r0, 0x04
 	addi r10, r10, 0x80
 	custom 0, r3, r0, r10 # Put the cursor on the 4th upper column
@@ -136,8 +140,7 @@ start_message:
 	addi r14, r0, e
 	custom 0, r3, r1, r14 # Writes down e on the LCD
 
-	# Writes down the second word
-
+	# Writes down the second word (Start)
 	addi r10, r0, 0x45	
 	addi r10, r10, 0x80
 	custom 0, r3, r0, r10 # Put the cursor on the 6th down column
@@ -158,7 +161,7 @@ start_message:
 	custom 0, r3, r1, r14 # Writes down t on the LCD
 	ret
 
-# Waits for the user to press the pushbutton.
+# Waits for the user to press the push button.
 wait_start:
 	addi r10, r0, control_btn
 	ldw r10, 0(r10) # Read from the control push button
@@ -186,6 +189,7 @@ update_score:
 	custom 0, r3, r1, r15
 	ret
 
+# Draw the character.
 draw_char:
 	addi r10, r0, 0x40
 	addi r10, r10, 0x80
@@ -193,8 +197,9 @@ draw_char:
 	addi r14, r0, char
 	custom 0, r3, r1, r14 # Put the character on the first bottom position of the scrren
 	ret
-
 #############################################
+
+# Moves the terrain towards the player by sequentially calling the move operation accordingly to the amount of blocks.
 move_terrain:	
 	addi r17, r0, 0x80
 	addi r17, r17, 0x40
@@ -202,7 +207,6 @@ move_terrain:
 	bne r5, r17, move
 	beq r5, r17, clear_final
 	ret
-
 move:
 	addi r14, r0, block
 	subi r5, r5, 1
@@ -216,6 +220,7 @@ move:
 	custom 0, r3, r1, r14 # Clear the last position	
 	ret
 
+# Removes blocks from the screen when they reaches its end. 
 clear_final: 
 	blt r9, r0, set_last
 	add r10, r5, r9
@@ -228,10 +233,7 @@ clear_final:
 	add r31, r0, r25
 	ret
 
-
-
-
-# Set cursor to [1][16] position.
+# Set first block pointer to the to end of the display ([1][16] position).
 set_last:
 	addi r9, r0, 2
 	addi r10, r0, end_screen
@@ -240,17 +242,22 @@ set_last:
 	add r5, r0, r10
 	br loop
 
+# Does the pre setting for a approximately half second delay.
 half_delay:
 	addi r15, r0, 16383
 	addi r13, r0, 0
 	addi r16, r0, 0
 	addi r17, r0, 25
 	br delay
+
+# " "	regular approx. 1 second delay.
 set_delay:
 	addi r15, r0, 32767
 	addi r13, r0, 0
 	addi r16, r0, 0
 	addi r17, r0, 25
+
+# Does the logic required to perform a delay.	
 delay:
 	addi r13, r13, 1
 	bne r15, r13, delay
@@ -260,7 +267,14 @@ contadorDelay:
 	bne r16, r17, delay
 	ret	
 
-# Moves the terrain towards to the character (stay in loop untill user input).
+# Moves the blocks towards to the character untill it jumps over
+# or loses the game. It also pauses/resumes the game when the
+# user desires. 
+# First check if the user has pressed the pause button then
+# verify whether pressed jump button, then moves the terrain
+# and perform a 1 second delay. Finally check if the block is
+# passing below the character to perform the score/game over lo-
+# gic. s
 loop:
 	call read_pause
 	call read_jmp
@@ -269,19 +283,25 @@ loop:
 	call check_bottom_block
 	br loop
 
+# Reads the input from the user accordingly to the memory address of the jump push button.
 read_jmp:
-	beq r7, r1, return	
+	beq r7, r1, return # if the character is currently on the "air" returns.	
 	ldw r4, 0(r11) # Read from the control push button
 	beq r4, r1, jump	# Branches if equal to 1
 	ret
 
+# Reads the input from the user accordingly to the memory address of the pause push button.
 read_pause:
 	ldw r12, 0(r12) # Read from the control push button
 	beq r12, r1, read_pause	# Branches back if equal to 1
 	ret
 
+# https://www.youtube.com/watch?v=DdoJONt-VZQ Easter egg.
 return:
 	ret	
+
+# Replaces the character current position by a blank space then plot him on the upper 
+# position from the screen.
 jump:
 	addi r7, r0, 1
 	addi r14, r0, down_row
@@ -301,6 +321,8 @@ jump:
 	custom 0, r3, r1, r14	
 	ret
 
+# Replaces the character current position by a blank space then plot him on the under 
+# position from the screen.
 down:
 	addi r14, r0, 0x0
 	addi r14, r14, 0x80
@@ -320,7 +342,10 @@ down:
 	addi r7, r0, 0
 	br loop
 
-	
+# Verifies if the user is passing above the block by checking the current position of the 
+# leftmost block (r5) and comparing it with the current character's position (up or down (r7)).
+# If the character is located on the under position, game over. Otherwise moves the blocks
+# over and prevent that the character goes back to the bottom. After all, updates the score.
 check_bottom_block:
 	addi r14, r0, down_row
 	addi r14, r14, 0x80
@@ -329,53 +354,49 @@ check_bottom_block:
 	call update_score
 	br loop
 
+# Prints game over and stay in loop untill the player desires to play again by pressing the control button..
 game_over:
 	call clear_screen
 	addi r10, r0, 0x04
 	addi r10, r10, 0x80
-	custom 0, r3, r0, r10 # Put the cursor on the 4th upper column
+	custom 0, r3, r0, r10 # Reallocates the cursor
 
 	addi r14, r0, g
-	custom 0, r3, r1, r14 # Writes down r on the LCD
+	custom 0, r3, r1, r14 # Writes down g on the LCD
 
 	addi r14, r0, a
-	custom 0, r3, r1, r14 # Writes down e on the LCD
+	custom 0, r3, r1, r14 # Writes down a on the LCD
 
 	addi r14, r0, m
-	custom 0, r3, r1, r14 # Writes down s on the LCD
+	custom 0, r3, r1, r14 # Writes down m on the LCD
 
 	addi r14, r0, e
-	custom 0, r3, r1, r14 # Writes down s on the LCD
+	custom 0, r3, r1, r14 # Writes down e on the LCD
 
 	addi r14, r0, blank
-	custom 0, r3, r1, r14 # Writes down s on the LCD	
+	custom 0, r3, r1, r14 # Writes down ' ' on the LCD	
 
 	addi r14, r0, o
 	custom 0, r3, r1, r14 # Writes down o on the LCD
 
 	addi r14, r0, v
-	custom 0, r3, r1, r14 # Writes down s on the LCD
+	custom 0, r3, r1, r14 # Writes down v on the LCD
 		
 	addi r14, r0, e
 	custom 0, r3, r1, r14 # Writes down e on the LCD
 
 	addi r14, r0, r
-	custom 0, r3, r1, r14 # Writes down e on the LCD
+	custom 0, r3, r1, r14 # Writes down r on the LCD
 	
 	br end
 
-# Read from push button, if equal to 1, exit.
-read_btn:
-	addi r12, r0, control_btn
-	ldw r12, 0(r12) # Read from the control push button
-	beq r12, r1, end	# Branches back if equal to 1
-	ret
-
+# Clear the screen.
 clear_screen:
 	movia r14, clear
 	custom 0, r3, r0, r14
 	ret
 
+# Stay in loop untill user input.
 end:
 	addi r10, r0, control_btn
 	ldw r10, 0(r10) # Read from the control push button
