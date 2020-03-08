@@ -441,12 +441,12 @@ static long char_lcd_ioctl(struct file *filp, unsigned int cmd, unsigned long ar
 
 	switch (cmd)
 	{
-	case LCD_CLEAR:
+	case 1:
 	{
 		lcd_clearDisplay();
 		break;
 	}
-	case LCD_GOTOXY:
+	case 9:
 	{
 		axis_t position;
 		if (copy_from_user(&position, (axis_t *)arg, sizeof(position)))
@@ -459,7 +459,7 @@ static long char_lcd_ioctl(struct file *filp, unsigned int cmd, unsigned long ar
 		printk(KERN_INFO "After call lcd_gotoxy [%d][%d]\n", position.x, position.y);
 		break;
 	}
-	case LCD_SET_DISPLAY:
+	case 2:
 	{
 		display_control_t display;
 		if (copy_from_user(&display, (display_control_t *)arg, sizeof(display)))
@@ -474,7 +474,7 @@ static long char_lcd_ioctl(struct file *filp, unsigned int cmd, unsigned long ar
 			   (display.blink) ? "enable" : "disable");
 		break;
 	}
-	case LCD_PUT_CHAR:
+	case 3:
 	{
 		unsigned char character;
 		if (copy_from_user(&character, (unsigned char *)arg, sizeof(character)))
@@ -486,17 +486,17 @@ static long char_lcd_ioctl(struct file *filp, unsigned int cmd, unsigned long ar
 		printk(KERN_INFO "Put character: %c\n", character);
 		break;
 	}
-	case LCD_SCROLL_LEFT:
+	case 4:
 	{
 		lcd_scroll_left();
 		break;
 	}
-	case LCD_SCROLL_RIGHT:
+	case 5:
 	{
 		lcd_scroll_right();
 		break;
 	}
-	case LCD_UPLOAD_CUSTOM_CHAR:
+	case 6:
 	{
 		custom_char_t custom_chr;
 		if (copy_from_user(&custom_chr, (custom_char_t *)arg, sizeof(custom_chr)))
@@ -507,12 +507,12 @@ static long char_lcd_ioctl(struct file *filp, unsigned int cmd, unsigned long ar
 		lcd_create_char(&custom_chr);
 		break;
 	}
-	case LCD_INIT:
+	case 7:
 	{
 		lcd_initialize();
 		break;
 	}
-	case LCD_SET_AUTOSCROLL:
+	case 8:
 	{
 		unsigned char status;
 		if (copy_from_user(&status, (unsigned char *)arg, sizeof(status)))
