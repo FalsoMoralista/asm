@@ -1,0 +1,1 @@
+cmd_/home/pi/Desktop/git/asm/ARM/LCD16x2_Driver-master/lcd_driver.ko := ld -r  -EL -T ./scripts/module-common.lds -T ./arch/arm/kernel/module.lds  --build-id  -o /home/pi/Desktop/git/asm/ARM/LCD16x2_Driver-master/lcd_driver.ko /home/pi/Desktop/git/asm/ARM/LCD16x2_Driver-master/lcd_driver.o /home/pi/Desktop/git/asm/ARM/LCD16x2_Driver-master/lcd_driver.mod.o ;  true
