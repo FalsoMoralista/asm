@@ -10,6 +10,15 @@ lcd_driver: .asciz "/dev/lcd_1602"
 character: .ascii "{"
 block: .ascii "#"
 blank: .ascii " "
+line1: .word 1
+line3: .word 1
+g: .ascii "G"
+a: .ascii "a"
+m: .ascii "m"
+e: .ascii "e"
+capital_o: .ascii "O"
+v: .ascii "v"
+r: .ascii "r"
 
 halfp1sec:	.long 0
 		.long 299999999
@@ -20,49 +29,91 @@ halfp1sec:	.long 0
 
 .text
 .global main
-// reserved: r3 (pc); r14 (link register), r8 (block current addr) ,r9 (current block length) TODO REVIEW
+// reserved: r4 (control loop) r13 (pc); r14 (link register), r8 (block current addr) ,r9 (current block length) TODO REVIEW
 // Temporary: r10 (function args); r11 (saving return addresses)
 main: // Config and start game
 	bl init_display
 	mov r8, #16
 	mov r9, #1
+	mov r4, #0
 	b game_loop
 	b end
 
+pre_set:
+	mov r4, #0
 game_loop:
+	cmp r9, r4
+	beq pre_set
 	bl move_terrain
 	bl delay
 	b game_loop
 
-
 move_terrain:
 	push {r14} // Save the current return address
-	mov r4, #0
+	bl check_collision
+	b move
 move:
 	cmp r9, r4
 	beq return
-	mov r10, r8 // Get the block address and pass to the param reg.
-	bl set_cursor // Put the cursor on the current block address
-	ldr r10, =blank // Load blank character
-	bl send_character // Replaces by an empty value
 	sub r8, #1
 	mov r10, r8
 	bl set_cursor
 	ldr r10, =block
 	bl send_character
+	add r10, r8, r9
+	bl set_cursor
+	ldr r10, =blank
+	bl send_character
 	add r4, r4, #1
-	b move
-
+	b return
 return:
 	pop {r14}
 	bx lr
 
+check_collision:
+	mov r10, #0
+	cmp r8, r10
+	beq game_over
+	bx lr
+
+game_over:
+	bl display_message
+	b end
+display_message:
+	push {r14}
+	mov r10, #0
+	bl set_cursor
+	ldr r10, =blank
+	bl send_character
+	mov r10, #5
+	bl set_cursor_y
+	ldr r10, =g
+	bl send_character
+	ldr r10, =a
+	bl send_character
+	ldr r10, =m
+	bl send_character
+	ldr r10, =e
+	bl send_character
+	mov r10, #5
+	bl set_cursor
+	ldr r10, =capital_o
+	bl send_character
+	ldr r10, =v
+	bl send_character
+	ldr r10, =e
+	bl send_character
+	ldr r10, =r
+	bl send_character
+	pop {r14}
+	bx lr
+
 delay:
-ldr r7, =nanosleep
-ldr r0, =halfp1sec
-mov r1, #0
-swi 0
-bx lr
+	ldr r7, =nanosleep
+	ldr r0, =halfp1sec
+	mov r1, #0
+	swi 0
+	bx lr
 
 // todo commment
 init_display: // Clear the display, and places cursor on bottom
@@ -89,6 +140,17 @@ clear_display: // Clears the LCD Display.
 	mov r0, r6 // Gets the device file descriptor
 	ldr r7, =ioctl // I/O control syscall
 	ldr r1, =clear // Arg1: device clear operation
+	swi 0
+	bx lr
+
+set_cursor_y:
+	ldr r5, =line1
+	add r5, r5, #1
+	str r10, [r5]
+	ldr r2, =line1
+	mov r0, r6
+	ldr r7, =ioctl
+	ldr r1, =set_address
 	swi 0
 	bx lr
 
