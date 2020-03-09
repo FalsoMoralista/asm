@@ -20,6 +20,11 @@ capital_o: .ascii "O"
 v: .ascii "v"
 r: .ascii "r"
 
+
+ten: .word 48
+hundred: .word 48
+nine: .word 57
+zero: .word 48
 halfp1sec:	.long 0
 		.long 299999999
 // LCD api operation op codes
@@ -75,9 +80,6 @@ return:
 	pop {r14}
 	bx lr
 
-returno1:
-	bx lr
-
 reset:
 	mov r4, #0
 	b game_loop
@@ -85,9 +87,61 @@ reset:
 block_reset:
 	mov r4, #1
 	bl save
+	bl set_cursor_y
+	ldr r10, =blank
+	bl send_character
+	mov r10, #0
+	bl set_cursor
+	ldr r10, =character
+	bl send_character
+//	mov r11, #0 // Throw character back to y axis = 0 uncomment this to make game end
+	bl increment_score
 	mov r8, #16
-	mov r4, #0
 	b game_loop
+
+update_score:
+	push {r14}
+	mov r10, #15
+	bl set_cursor_y
+	ldr r10, =ten
+	bl send_character
+	mov r10, #14
+	bl set_cursor_y
+	ldr r10, =hundred
+	bl send_character
+	b return
+
+increment_score:
+	push {r14}
+	ldr r10, =ten
+	ldr r4, [r10] // Load value contained on memory address from ten
+ 	mov r8, r4 // Saves in r8
+	ldr r4, =nine 
+	ldr r10, [r4] // Loads the value contained on mem addr from nine
+	mov r4, r8
+	cmp r10, r4
+	beq increment_hundred
+	ldr r10, =ten
+	add r4, r4, #1
+	str r4, [r10]
+	bl update_score
+	mov r4, #0
+	b return
+
+increment_hundred:
+	ldr r10, =hundred
+	mov r4, #0
+	ldr r4, [r10]
+	add r4, r4, #1
+	str r4, [r10]
+	ldr r10, =ten
+	mov r4, #0
+	ldr r10, =zero
+	ldr r4, [r10]
+	ldr r10, =ten
+	str r4,[r10]
+	bl update_score
+	b return
 
 save:
 	push {r14}
@@ -159,6 +213,7 @@ init_display: // Clear the display, and places cursor on bottom
 	bl set_cursor_y // todo delete y in order to down char
 	ldr r10, =character
 	bl send_character
+	bl update_score
 	pop {r14}
 	bx lr
 
