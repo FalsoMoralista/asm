@@ -29,21 +29,26 @@ halfp1sec:	.long 0
 
 .text
 .global main
-// reserved: r4 (control loop) r13 (pc); r14 (link register), r8 (block current addr) ,r9 (current block length) TODO REVIEW
-// Temporary: r10 (function args); r11 (saving return addresses)
+// Reserved registers: r4 (control loop) r13 (pc); r14 (link register), r8 (block current addr),
+// r6 file descriptor for device file
+// r9 (current block length).
+// r11 character position (y axis)
+// Temporary registers: r10 (function args),
+// r2, r7, r1, r3
 main: // Config and start game
 	bl init_display
 	mov r8, #16
-	mov r9, #1
+	mov r9, #3
 	mov r4, #0
+	mov r11, #1 // char setted to always jump
 	b game_loop
 	b end
 
 pre_set:
 	mov r4, #0
 game_loop:
-	cmp r9, r4
-	beq pre_set
+//	cmp r9, r4
+//	beq pre_set
 	bl move_terrain
 	bl delay
 	b game_loop
@@ -54,7 +59,7 @@ move_terrain:
 	b move
 move:
 	cmp r9, r4
-	beq return
+	beq reset
 	sub r8, #1
 	mov r10, r8
 	bl set_cursor
@@ -70,16 +75,46 @@ return:
 	pop {r14}
 	bx lr
 
-check_collision:
+returno1:
+	bx lr
+
+reset:
+	mov r4, #0
+	b game_loop
+
+block_reset:
+	mov r4, #1
+	bl save
+	mov r8, #16
+	mov r4, #0
+	b game_loop
+
+save:
+	push {r14}
+pop:
+	cmp r4, r9
+	bgt return
+	add r10, r9, r8
+	sub r10, r4
+	bl set_cursor
+	ldr r10, =blank
+	bl send_character
+	add r4, r4, #1
+	bl delay
+	b pop
+
+check_collision: // Checks if block reached end of the screen
 	mov r10, #0
 	cmp r8, r10
 	beq game_over
 	bx lr
 
-game_over:
-	bl display_message
-	b end
-display_message:
+game_over: // Checks char y position and end game
+	mov r10, #0
+	cmp r11, r10
+	beq display_message
+	b block_reset
+display_message: // Display "Game Over" through the two lines
 	push {r14}
 	mov r10, #0
 	bl set_cursor
@@ -106,9 +141,9 @@ display_message:
 	ldr r10, =r
 	bl send_character
 	pop {r14}
-	bx lr
+	b end
 
-delay:
+delay: // Call for a delay syscall (1.5 seconds)
 	ldr r7, =nanosleep
 	ldr r0, =halfp1sec
 	mov r1, #0
@@ -117,14 +152,14 @@ delay:
 
 // todo commment
 init_display: // Clear the display, and places cursor on bottom
-	mov r11, r14
+	push {r14}
 	bl open_device_file
 	bl clear_display
 	mov r10, #0
-	bl set_cursor
+	bl set_cursor_y // todo delete y in order to down char
 	ldr r10, =character
 	bl send_character
-	mov r14, r11
+	pop {r14}
 	bx lr
 
 open_device_file: // Opens device file and saves the file descriptor over R6
@@ -143,7 +178,7 @@ clear_display: // Clears the LCD Display.
 	swi 0
 	bx lr
 
-set_cursor_y:
+set_cursor_y: // Does samething that below but for the upper (first) line
 	ldr r5, =line1
 	add r5, r5, #1
 	str r10, [r5]
