@@ -1,0 +1,1 @@
+cmd_/home/luciano/Desktop/git/dark-side/modules/hello.ko := ld -r -m elf_x86_64  -z max-page-size=0x200000 -T /usr/src/linux-headers-4.19.0-6-common/scripts/module-common.lds  --build-id  -o /home/luciano/Desktop/git/dark-side/modules/hello.ko /home/luciano/Desktop/git/dark-side/modules/hello.o /home/luciano/Desktop/git/dark-side/modules/hello.mod.o ;  true

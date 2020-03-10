@@ -1,0 +1,460 @@
+     1                                  %include "linux64.inc"
+     1                              <1> section .bss
+     2 00000000 <res 00000064>      <1> 	digitSpace resb 100
+     3 00000064 <res 00000008>      <1> 	digitSpacePos resb 8
+     4 0000006C <res 00000008>      <1> 	printSpace resb 8
+     5                              <1> %macro print 1
+     6                              <1> 	mov rax, %1
+     7                              <1> 	mov [printSpace], rax
+     8                              <1> 	mov rbx, 0
+     9                              <1> %%printLoop:
+    10                              <1> 	mov cl, [rax]
+    11                              <1> 	cmp cl, 0
+    12                              <1> 	je %%endPrintLoop
+    13                              <1> 	inc rbx
+    14                              <1> 	inc rax
+    15                              <1> 	jmp %%printLoop
+    16                              <1> %%endPrintLoop:
+    17                              <1> 	mov rax, SYS_WRITE
+    18                              <1> 	mov rdi, STDIN
+    19                              <1> 	mov rsi, [printSpace]
+    20                              <1> 	mov rdx, rbx
+    21                              <1> 	syscall
+    22                              <1> %endmacro
+    23                              <1> 
+    24                              <1> %macro printVal 1
+    25                              <1> 	mov rax, %1
+    26                              <1> %%printRAX:
+    27                              <1> 	mov rcx, digitSpace
+    28                              <1> ;	mov rbx, 10
+    29                              <1> ;	mov [rcx], rbx
+    30                              <1> ;	inc rcx
+    31                              <1> 	mov [digitSpacePos], rcx
+    32                              <1> 
+    33                              <1> %%printRAXLoop:
+    34                              <1> 	mov rdx, 0
+    35                              <1> 	mov rbx, 10
+    36                              <1> 	div rbx
+    37                              <1> 	push rax
+    38                              <1> 	add rdx, 48
+    39                              <1> 
+    40                              <1> 	mov rcx, [digitSpacePos]
+    41                              <1> 	mov [rcx], dl
+    42                              <1> 	inc rcx
+    43                              <1> 	mov [digitSpacePos], rcx
+    44                              <1> 	
+    45                              <1> 	pop rax
+    46                              <1> 	cmp rax, 0
+    47                              <1> 	jne %%printRAXLoop
+    48                              <1> 
+    49                              <1> %%printRAXLoop2:
+    50                              <1> 	mov rcx, [digitSpacePos]
+    51                              <1> 
+    52                              <1> 	mov rax, 1
+    53                              <1> 	mov rdi, 1
+    54                              <1> 	mov rsi, rcx
+    55                              <1> 	mov rdx, 1
+    56                              <1> 	syscall
+    57                              <1> 
+    58                              <1> 	mov rcx, [digitSpacePos]
+    59                              <1> 	dec rcx
+    60                              <1> 	mov [digitSpacePos], rcx
+    61                              <1> 
+    62                              <1> 	cmp rcx, digitSpace
+    63                              <1> 	jge %%printRAXLoop2
+    64                              <1> 
+    65                              <1> %endmacro
+    66                              <1> 
+    67                              <1> %macro exit 0
+    68                              <1> 	mov rax, SYS_EXIT
+    69                              <1> 	mov rdi, 0
+    70                              <1> 	syscall
+    71                              <1> %endmacro
+    72                              <1> 
+    73                              <1> STDIN_FILENO	equ	0
+    74                              <1> STDOUT_FILENO	equ	1
+    75                              <1> STDERR_FILENO	equ	2
+    76                              <1> STDIN	equ	0
+    77                              <1> STDOUT	equ	1
+    78                              <1> STDERR	equ	2
+    79                              <1> 
+    80                              <1> O_RDONLY	equ	0
+    81                              <1> O_WRONLY	equ	1
+    82                              <1> O_RDWR		equ	2
+    83                              <1> 
+    84                              <1> O_CREAT		equ	64
+    85                              <1> O_EXCL		equ	128
+    86                              <1> O_NOCTTY	equ	256
+    87                              <1> O_TRUNC		equ	512
+    88                              <1> O_APPEND	equ	1024
+    89                              <1> O_NONBLOCK	equ	2048
+    90                              <1> O_NDELAY	equ	2048
+    91                              <1> O_DSYNC		equ	4096
+    92                              <1> O_ASYNC		equ	8192
+    93                              <1> O_DIRECT	equ	16384
+    94                              <1> O_DIRECTORY	equ	65536
+    95                              <1> O_NOFOLLOW	equ	131072
+    96                              <1> O_NOATIME	equ	262144
+    97                              <1> O_CLOEXEC	equ	524288
+    98                              <1> O_SYNC		equ	1052672
+    99                              <1> O_PATH		equ	2097152
+   100                              <1> O_TMPFILE	equ	4259840
+   101                              <1> 
+   102                              <1> O_LARGEFILE	equ	0
+   103                              <1> 
+   104                              <1> SYS_READ	equ	0
+   105                              <1> SYS_WRITE	equ	1
+   106                              <1> SYS_OPEN	equ	2
+   107                              <1> SYS_CLOSE	equ	3
+   108                              <1> SYS_STAT	equ	4
+   109                              <1> SYS_FSTAT	equ	5
+   110                              <1> SYS_LSTAT	equ	6
+   111                              <1> SYS_POLL	equ	7
+   112                              <1> SYS_LSEEK	equ	8
+   113                              <1> SYS_MMAP	equ	9
+   114                              <1> SYS_MPROTECT	equ	10
+   115                              <1> SYS_MUNMAP	equ	11
+   116                              <1> SYS_BRK	equ	12
+   117                              <1> SYS_RT_SIGACTION	equ	13
+   118                              <1> SYS_RT_SIGPROCMASK	equ	14
+   119                              <1> SYS_RT_SIGRETURN	equ	15
+   120                              <1> SYS_IOCTL	equ	16
+   121                              <1> SYS_PREAD64	equ	17
+   122                              <1> SYS_PWRITE64	equ	18
+   123                              <1> SYS_READV	equ	19
+   124                              <1> SYS_WRITEV	equ	20
+   125                              <1> SYS_ACCESS	equ	21
+   126                              <1> SYS_PIPE	equ	22
+   127                              <1> SYS_SELECT	equ	23
+   128                              <1> SYS_SCHED_YIELD	equ	24
+   129                              <1> SYS_MREMAP	equ	25
+   130                              <1> SYS_MSYNC	equ	26
+   131                              <1> SYS_MINCORE	equ	27
+   132                              <1> SYS_MADVISE	equ	28
+   133                              <1> SYS_SHMGET	equ	29
+   134                              <1> SYS_SHMAT	equ	30
+   135                              <1> SYS_SHMCTL	equ	31
+   136                              <1> SYS_DUP	equ	32
+   137                              <1> SYS_DUP2	equ	33
+   138                              <1> SYS_PAUSE	equ	34
+   139                              <1> SYS_NANOSLEEP	equ	35
+   140                              <1> SYS_GETITIMER	equ	36
+   141                              <1> SYS_ALARM	equ	37
+   142                              <1> SYS_SETITIMER	equ	38
+   143                              <1> SYS_GETPID	equ	39
+   144                              <1> SYS_SENDFILE	equ	40
+   145                              <1> SYS_SOCKET	equ	41
+   146                              <1> SYS_CONNECT	equ	42
+   147                              <1> SYS_ACCEPT	equ	43
+   148                              <1> SYS_SENDTO	equ	44
+   149                              <1> SYS_RECVFROM	equ	45
+   150                              <1> SYS_SENDMSG	equ	46
+   151                              <1> SYS_RECVMSG	equ	47
+   152                              <1> SYS_SHUTDOWN	equ	48
+   153                              <1> SYS_BIND	equ	49
+   154                              <1> SYS_LISTEN	equ	50
+   155                              <1> SYS_GETSOCKNAME	equ	51
+   156                              <1> SYS_GETPEERNAME	equ	52
+   157                              <1> SYS_SOCKETPAIR	equ	53
+   158                              <1> SYS_SETSOCKOPT	equ	54
+   159                              <1> SYS_GETSOCKOPT	equ	55
+   160                              <1> SYS_CLONE	equ	56
+   161                              <1> SYS_FORK	equ	57
+   162                              <1> SYS_VFORK	equ	58
+   163                              <1> SYS_EXECVE	equ	59
+   164                              <1> SYS_EXIT	equ	60
+   165                              <1> SYS_WAIT4	equ	61
+   166                              <1> SYS_KILL	equ	62
+   167                              <1> SYS_UNAME	equ	63
+   168                              <1> SYS_SEMGET	equ	64
+   169                              <1> SYS_SEMOP	equ	65
+   170                              <1> SYS_SEMCTL	equ	66
+   171                              <1> SYS_SHMDT	equ	67
+   172                              <1> SYS_MSGGET	equ	68
+   173                              <1> SYS_MSGSND	equ	69
+   174                              <1> SYS_MSGRCV	equ	70
+   175                              <1> SYS_MSGCTL	equ	71
+   176                              <1> SYS_FCNTL	equ	72
+   177                              <1> SYS_FLOCK	equ	73
+   178                              <1> SYS_FSYNC	equ	74
+   179                              <1> SYS_FDATASYNC	equ	75
+   180                              <1> SYS_TRUNCATE	equ	76
+   181                              <1> SYS_FTRUNCATE	equ	77
+   182                              <1> SYS_GETDENTS	equ	78
+   183                              <1> SYS_GETCWD	equ	79
+   184                              <1> SYS_CHDIR	equ	80
+   185                              <1> SYS_FCHDIR	equ	81
+   186                              <1> SYS_RENAME	equ	82
+   187                              <1> SYS_MKDIR	equ	83
+   188                              <1> SYS_RMDIR	equ	84
+   189                              <1> SYS_CREAT	equ	85
+   190                              <1> SYS_LINK	equ	86
+   191                              <1> SYS_UNLINK	equ	87
+   192                              <1> SYS_SYMLINK	equ	88
+   193                              <1> SYS_READLINK	equ	89
+   194                              <1> SYS_CHMOD	equ	90
+   195                              <1> SYS_FCHMOD	equ	91
+   196                              <1> SYS_CHOWN	equ	92
+   197                              <1> SYS_FCHOWN	equ	93
+   198                              <1> SYS_LCHOWN	equ	94
+   199                              <1> SYS_UMASK	equ	95
+   200                              <1> SYS_GETTIMEOFDAY	equ	96
+   201                              <1> SYS_GETRLIMIT	equ	97
+   202                              <1> SYS_GETRUSAGE	equ	98
+   203                              <1> SYS_SYSINFO	equ	99
+   204                              <1> SYS_TIMES	equ	100
+   205                              <1> SYS_PTRACE	equ	101
+   206                              <1> SYS_GETUID	equ	102
+   207                              <1> SYS_SYSLOG	equ	103
+   208                              <1> SYS_GETGID	equ	104
+   209                              <1> SYS_SETUID	equ	105
+   210                              <1> SYS_SETGID	equ	106
+   211                              <1> SYS_GETEUID	equ	107
+   212                              <1> SYS_GETEGID	equ	108
+   213                              <1> SYS_SETPGID	equ	109
+   214                              <1> SYS_GETPPID	equ	110
+   215                              <1> SYS_GETPGRP	equ	111
+   216                              <1> SYS_SETSID	equ	112
+   217                              <1> SYS_SETREUID	equ	113
+   218                              <1> SYS_SETREGID	equ	114
+   219                              <1> SYS_GETGROUPS	equ	115
+   220                              <1> SYS_SETGROUPS	equ	116
+   221                              <1> SYS_SETRESUID	equ	117
+   222                              <1> SYS_GETRESUID	equ	118
+   223                              <1> SYS_SETRESGID	equ	119
+   224                              <1> SYS_GETRESGID	equ	120
+   225                              <1> SYS_GETPGID	equ	121
+   226                              <1> SYS_SETFSUID	equ	122
+   227                              <1> SYS_SETFSGID	equ	123
+   228                              <1> SYS_GETSID	equ	124
+   229                              <1> SYS_CAPGET	equ	125
+   230                              <1> SYS_CAPSET	equ	126
+   231                              <1> SYS_RT_SIGPENDING	equ	127
+   232                              <1> SYS_RT_SIGTIMEDWAIT	equ	128
+   233                              <1> SYS_RT_SIGQUEUEINFO	equ	129
+   234                              <1> SYS_RT_SIGSUSPEND	equ	130
+   235                              <1> SYS_SIGALTSTACK	equ	131
+   236                              <1> SYS_UTIME	equ	132
+   237                              <1> SYS_MKNOD	equ	133
+   238                              <1> SYS_USELIB	equ	134
+   239                              <1> SYS_PERSONALITY	equ	135
+   240                              <1> SYS_USTAT	equ	136
+   241                              <1> SYS_STATFS	equ	137
+   242                              <1> SYS_FSTATFS	equ	138
+   243                              <1> SYS_SYSFS	equ	139
+   244                              <1> SYS_GETPRIORITY	equ	140
+   245                              <1> SYS_SETPRIORITY	equ	141
+   246                              <1> SYS_SCHED_SETPARAM	equ	142
+   247                              <1> SYS_SCHED_GETPARAM	equ	143
+   248                              <1> SYS_SCHED_SETSCHEDULER	equ	144
+   249                              <1> SYS_SCHED_GETSCHEDULER	equ	145
+   250                              <1> SYS_SCHED_GET_PRIORITY_MAX	equ	146
+   251                              <1> SYS_SCHED_GET_PRIORITY_MIN	equ	147
+   252                              <1> SYS_SCHED_RR_GET_INTERVAL	equ	148
+   253                              <1> SYS_MLOCK	equ	149
+   254                              <1> SYS_MUNLOCK	equ	150
+   255                              <1> SYS_MLOCKALL	equ	151
+   256                              <1> SYS_MUNLOCKALL	equ	152
+   257                              <1> SYS_VHANGUP	equ	153
+   258                              <1> SYS_MODIFY_LDT	equ	154
+   259                              <1> SYS_PIVOT_ROOT	equ	155
+   260                              <1> SYS__SYSCTL	equ	156
+   261                              <1> SYS_PRCTL	equ	157
+   262                              <1> SYS_ARCH_PRCTL	equ	158
+   263                              <1> SYS_ADJTIMEX	equ	159
+   264                              <1> SYS_SETRLIMIT	equ	160
+   265                              <1> SYS_CHROOT	equ	161
+   266                              <1> SYS_SYNC	equ	162
+   267                              <1> SYS_ACCT	equ	163
+   268                              <1> SYS_SETTIMEOFDAY	equ	164
+   269                              <1> SYS_MOUNT	equ	165
+   270                              <1> SYS_UMOUNT2	equ	166
+   271                              <1> SYS_SWAPON	equ	167
+   272                              <1> SYS_SWAPOFF	equ	168
+   273                              <1> SYS_REBOOT	equ	169
+   274                              <1> SYS_SETHOSTNAME	equ	170
+   275                              <1> SYS_SETDOMAINNAME	equ	171
+   276                              <1> SYS_IOPL	equ	172
+   277                              <1> SYS_IOPERM	equ	173
+   278                              <1> SYS_CREATE_MODULE	equ	174
+   279                              <1> SYS_INIT_MODULE	equ	175
+   280                              <1> SYS_DELETE_MODULE	equ	176
+   281                              <1> SYS_GET_KERNEL_SYMS	equ	177
+   282                              <1> SYS_QUERY_MODULE	equ	178
+   283                              <1> SYS_QUOTACTL	equ	179
+   284                              <1> SYS_NFSSERVCTL	equ	180
+   285                              <1> SYS_GETPMSG	equ	181
+   286                              <1> SYS_PUTPMSG	equ	182
+   287                              <1> SYS_AFS_SYSCALL	equ	183
+   288                              <1> SYS_TUXCALL	equ	184
+   289                              <1> SYS_SECURITY	equ	185
+   290                              <1> SYS_GETTID	equ	186
+   291                              <1> SYS_READAHEAD	equ	187
+   292                              <1> SYS_SETXATTR	equ	188
+   293                              <1> SYS_LSETXATTR	equ	189
+   294                              <1> SYS_FSETXATTR	equ	190
+   295                              <1> SYS_GETXATTR	equ	191
+   296                              <1> SYS_LGETXATTR	equ	192
+   297                              <1> SYS_FGETXATTR	equ	193
+   298                              <1> SYS_LISTXATTR	equ	194
+   299                              <1> SYS_LLISTXATTR	equ	195
+   300                              <1> SYS_FLISTXATTR	equ	196
+   301                              <1> SYS_REMOVEXATTR	equ	197
+   302                              <1> SYS_LREMOVEXATTR	equ	198
+   303                              <1> SYS_FREMOVEXATTR	equ	199
+   304                              <1> SYS_TKILL	equ	200
+   305                              <1> SYS_TIME	equ	201
+   306                              <1> SYS_FUTEX	equ	202
+   307                              <1> SYS_SCHED_SETAFFINITY	equ	203
+   308                              <1> SYS_SCHED_GETAFFINITY	equ	204
+   309                              <1> SYS_SET_THREAD_AREA	equ	205
+   310                              <1> SYS_IO_SETUP	equ	206
+   311                              <1> SYS_IO_DESTROY	equ	207
+   312                              <1> SYS_IO_GETEVENTS	equ	208
+   313                              <1> SYS_IO_SUBMIT	equ	209
+   314                              <1> SYS_IO_CANCEL	equ	210
+   315                              <1> SYS_GET_THREAD_AREA	equ	211
+   316                              <1> SYS_LOOKUP_DCOOKIE	equ	212
+   317                              <1> SYS_EPOLL_CREATE	equ	213
+   318                              <1> SYS_EPOLL_CTL_OLD	equ	214
+   319                              <1> SYS_EPOLL_WAIT_OLD	equ	215
+   320                              <1> SYS_REMAP_FILE_PAGES	equ	216
+   321                              <1> SYS_GETDENTS64	equ	217
+   322                              <1> SYS_SET_TID_ADDRESS	equ	218
+   323                              <1> SYS_RESTART_SYSCALL	equ	219
+   324                              <1> SYS_SEMTIMEDOP	equ	220
+   325                              <1> SYS_FADVISE64	equ	221
+   326                              <1> SYS_TIMER_CREATE	equ	222
+   327                              <1> SYS_TIMER_SETTIME	equ	223
+   328                              <1> SYS_TIMER_GETTIME	equ	224
+   329                              <1> SYS_TIMER_GETOVERRUN	equ	225
+   330                              <1> SYS_TIMER_DELETE	equ	226
+   331                              <1> SYS_CLOCK_SETTIME	equ	227
+   332                              <1> SYS_CLOCK_GETTIME	equ	228
+   333                              <1> SYS_CLOCK_GETRES	equ	229
+   334                              <1> SYS_CLOCK_NANOSLEEP	equ	230
+   335                              <1> SYS_EXIT_GROUP	equ	231
+   336                              <1> SYS_EPOLL_WAIT	equ	232
+   337                              <1> SYS_EPOLL_CTL	equ	233
+   338                              <1> SYS_TGKILL	equ	234
+   339                              <1> SYS_UTIMES	equ	235
+   340                              <1> SYS_VSERVER	equ	236
+   341                              <1> SYS_MBIND	equ	237
+   342                              <1> SYS_SET_MEMPOLICY	equ	238
+   343                              <1> SYS_GET_MEMPOLICY	equ	239
+   344                              <1> SYS_MQ_OPEN	equ	240
+   345                              <1> SYS_MQ_UNLINK	equ	241
+   346                              <1> SYS_MQ_TIMEDSEND	equ	242
+   347                              <1> SYS_MQ_TIMEDRECEIVE	equ	243
+   348                              <1> SYS_MQ_NOTIFY	equ	244
+   349                              <1> SYS_MQ_GETSETATTR	equ	245
+   350                              <1> SYS_KEXEC_LOAD	equ	246
+   351                              <1> SYS_WAITID	equ	247
+   352                              <1> SYS_ADD_KEY	equ	248
+   353                              <1> SYS_REQUEST_KEY	equ	249
+   354                              <1> SYS_KEYCTL	equ	250
+   355                              <1> SYS_IOPRIO_SET	equ	251
+   356                              <1> SYS_IOPRIO_GET	equ	252
+   357                              <1> SYS_INOTIFY_INIT	equ	253
+   358                              <1> SYS_INOTIFY_ADD_WATCH	equ	254
+   359                              <1> SYS_INOTIFY_RM_WATCH	equ	255
+   360                              <1> SYS_MIGRATE_PAGES	equ	256
+   361                              <1> SYS_OPENAT	equ	257
+   362                              <1> SYS_MKDIRAT	equ	258
+   363                              <1> SYS_MKNODAT	equ	259
+   364                              <1> SYS_FCHOWNAT	equ	260
+   365                              <1> SYS_FUTIMESAT	equ	261
+   366                              <1> SYS_NEWFSTATAT	equ	262
+   367                              <1> SYS_UNLINKAT	equ	263
+   368                              <1> SYS_RENAMEAT	equ	264
+   369                              <1> SYS_LINKAT	equ	265
+   370                              <1> SYS_SYMLINKAT	equ	266
+   371                              <1> SYS_READLINKAT	equ	267
+   372                              <1> SYS_FCHMODAT	equ	268
+   373                              <1> SYS_FACCESSAT	equ	269
+   374                              <1> SYS_PSELECT6	equ	270
+   375                              <1> SYS_PPOLL	equ	271
+   376                              <1> SYS_UNSHARE	equ	272
+   377                              <1> SYS_SET_ROBUST_LIST	equ	273
+   378                              <1> SYS_GET_ROBUST_LIST	equ	274
+   379                              <1> SYS_SPLICE	equ	275
+   380                              <1> SYS_TEE	equ	276
+   381                              <1> SYS_SYNC_FILE_RANGE	equ	277
+   382                              <1> SYS_VMSPLICE	equ	278
+   383                              <1> SYS_MOVE_PAGES	equ	279
+   384                              <1> SYS_UTIMENSAT	equ	280
+   385                              <1> SYS_EPOLL_PWAIT	equ	281
+   386                              <1> SYS_SIGNALFD	equ	282
+   387                              <1> SYS_TIMERFD_CREATE	equ	283
+   388                              <1> SYS_EVENTFD	equ	284
+   389                              <1> SYS_FALLOCATE	equ	285
+   390                              <1> SYS_TIMERFD_SETTIME	equ	286
+   391                              <1> SYS_TIMERFD_GETTIME	equ	287
+   392                              <1> SYS_ACCEPT4	equ	288
+   393                              <1> SYS_SIGNALFD4	equ	289
+   394                              <1> SYS_EVENTFD2	equ	290
+   395                              <1> SYS_EPOLL_CREATE1	equ	291
+   396                              <1> SYS_DUP3	equ	292
+   397                              <1> SYS_PIPE2	equ	293
+   398                              <1> SYS_INOTIFY_INIT1	equ	294
+   399                              <1> SYS_PREADV	equ	295
+   400                              <1> SYS_PWRITEV	equ	296
+   401                              <1> SYS_RT_TGSIGQUEUEINFO	equ	297
+   402                              <1> SYS_PERF_EVENT_OPEN	equ	298
+   403                              <1> SYS_RECVMMSG	equ	299
+   404                              <1> SYS_FANOTIFY_INIT	equ	300
+   405                              <1> SYS_FANOTIFY_MARK	equ	301
+   406                              <1> SYS_PRLIMIT64	equ	302
+   407                              <1> SYS_NAME_TO_HANDLE_AT	equ	303
+   408                              <1> SYS_OPEN_BY_HANDLE_AT	equ	304
+   409                              <1> SYS_CLOCK_ADJTIME	equ	305
+   410                              <1> SYS_SYNCFS	equ	306
+   411                              <1> SYS_SENDMMSG	equ	307
+   412                              <1> SYS_SETNS	equ	308
+   413                              <1> SYS_GETCPU	equ	309
+   414                              <1> SYS_PROCESS_VM_READV	equ	310
+   415                              <1> SYS_PROCESS_VM_WRITEV	equ	311
+   416                              <1> SYS_KCMP	equ	312
+   417                              <1> SYS_FINIT_MODULE	equ	313
+   418                              <1> SYS_SCHED_SETATTR	equ	314
+   419                              <1> SYS_SCHED_GETATTR	equ	315
+   420                              <1> SYS_RENAMEAT2	equ	316
+   421                              <1> SYS_SECCOMP	equ	317
+   422                              <1> SYS_GETRANDOM	equ	318
+   423                              <1> SYS_MEMFD_CREATE	equ	319
+   424                              <1> SYS_KEXEC_FILE_LOAD	equ	320
+   425                              <1> SYS_BPF	equ	321
+   426                              <1> STUB_EXECVEAT	equ	322
+   427                              <1> USERFAULTFD	equ	323
+   428                              <1> MEMBARRIER	equ	324
+   429                              <1> MLOCK2	equ	325
+   430                              <1> COPY_FILE_RANGE	equ	326
+   431                              <1> PREADV2	equ	327
+   432                              <1> PWRITEV2	equ	328
+     2                                  
+     3                                  global main
+     4                                  	MODULE_INIT_IGNORE_MODVERSIONS equ 1
+     5                                  	MODULE_INIT_IGNORE_VERMAGIC equ 2
+     6                                  	S_IRWXU equ 00700 ; owner permission mode
+     7                                  	section .text
+     8 00000000 B802000000              main:	mov rax, SYS_OPEN
+     9 00000005 48BF-                   	mov rdi, filename
+     9 00000007 [0000000000000000] 
+    10 0000000F BE00000000              	mov rsi, O_RDONLY
+    11 00000014 BABC020000              	mov rdx, S_IRWXU
+    12 00000019 0F05                    	syscall
+    13                                  
+    14 0000001B 4889C7                  	mov rdi, rax ; rax contains the file descriptor resulting from sys_open call
+    15 0000001E B839010000              	mov rax, SYS_FINIT_MODULE
+    16 00000023 48BE-                   	mov rsi, args ; mod params
+    16 00000025 [0900000000000000] 
+    17 0000002D BA01000000              	mov rdx, MODULE_INIT_IGNORE_MODVERSIONS ;flags
+    18 00000032 0F05                    	syscall
+    19                                  
+    20 00000034 B83C000000              	mov rax, 60
+    21 00000039 4831FF                  	xor rdi, rdi
+    22 0000003C 0F05                    	syscall
+    23                                  
+    24                                  	section .data
+    25 00000000 68656C6C6F2E6B6F00      filename: db "hello.ko",0
+    26 00000009 00                      args: db "",0
